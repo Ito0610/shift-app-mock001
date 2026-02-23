@@ -423,20 +423,21 @@
     var raw = toHalfWidth(el.value);
     var digits = raw.replace(/\D/g, '');
     var colonIndex = raw.indexOf(':');
+    var newVal;
     if (colonIndex === -1) {
       if (digits.length <= 2) {
-        el.value = digits;
+        newVal = digits;
       } else if (digits[0] === '0' || digits[0] === '1' || digits[0] === '2') {
         if (digits.length >= 4) {
-          el.value = digits.slice(0, 2) + ':' + digits.slice(2, 4);
+          newVal = digits.slice(0, 2) + ':' + digits.slice(2, 4);
         } else {
-          el.value = digits;
+          newVal = digits;
         }
       } else {
         if (digits.length >= 3) {
-          el.value = digits[0] + ':' + digits.slice(1, 3);
+          newVal = digits[0] + ':' + digits.slice(1, 3);
         } else {
-          el.value = digits;
+          newVal = digits;
         }
       }
     } else {
@@ -444,7 +445,11 @@
       var after = raw.slice(colonIndex + 1).replace(/\D/g, '');
       if (before.length > 2) before = before.slice(0, 2);
       if (after.length > 2) after = after.slice(0, 2);
-      el.value = before + (after.length > 0 ? ':' + after : '');
+      newVal = before + (after.length > 0 ? ':' + after : '');
+    }
+    if (newVal !== el.value) {
+      el.value = newVal;
+      el.setSelectionRange(newVal.length, newVal.length);
     }
   }
 
@@ -989,8 +994,11 @@
       const el = document.getElementById(id);
       if (el) {
         el.addEventListener('input', function () {
-          formatTimeInput(el);
-          updateTimeChart();
+          var target = el;
+          setTimeout(function () {
+            formatTimeInput(target);
+            updateTimeChart();
+          }, 0);
         });
       }
     });
