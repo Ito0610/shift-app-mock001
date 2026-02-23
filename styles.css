@@ -647,13 +647,7 @@ body {
   color: var(--text-muted);
 }
 
-.time-input-hint {
-  margin: 0 0 0.75rem 0;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-/* 時間指定：入力欄＋時計アイコン（参考画像スタイル） */
+/* 時間指定：入力欄＋時計アイコン */
 .time-range-row {
   display: flex;
   flex-wrap: wrap;
@@ -724,43 +718,56 @@ body {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
-}
-
-.time-picker-inner {
+  max-height: 70vh;
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  flex-direction: column;
 }
 
-.time-picker-inner label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
+.time-picker-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.time-picker-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  overflow-y: auto;
+  max-height: 50vh;
+  min-width: 200px;
+}
+
+.time-picker-option {
+  padding: 0.5rem 0.4rem;
   font-size: 0.9rem;
-}
-
-.time-picker-inner select {
-  padding: 0.35rem 0.5rem;
   border: 1px solid var(--border);
   border-radius: 6px;
-  font-size: 0.9rem;
-  min-width: 3.5rem;
-}
-
-.time-picker-apply {
-  padding: 0.4rem 0.75rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #fff;
-  background: var(--primary);
-  border: none;
-  border-radius: 6px;
+  background: var(--surface);
   cursor: pointer;
+  color: var(--text);
+  transition: background 0.15s;
 }
 
-.time-picker-apply:hover {
-  background: var(--primary-hover);
+.time-picker-option:hover {
+  background: #f0f0f0;
+}
+
+.time-picker-option.time-picker-option-selected {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.time-picker-clear {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+}
+
+.time-picker-clear:hover {
+  background: #f5f5f5;
+  color: var(--text);
 }
 
 .slot {
@@ -928,7 +935,7 @@ body {
   background: var(--primary-hover);
 }
 
-/* ===== スマホ表示 ===== */
+/* ===== スマホ表示（日付・2行時間・終日・時間・コピー・削除がしっかり見える構成） ===== */
 @media (max-width: 640px) {
   .app {
     padding: 0.75rem 0.5rem 1.5rem;
@@ -957,29 +964,38 @@ body {
     padding: 0.5rem;
   }
 
+  /* セルを大きくして日付・2行時間・4ボタンがすべて見えるように */
   .day-cell {
-    padding: 3px;
-    min-height: 76px;
-    max-height: 100px;
+    padding: 5px 3px;
+    min-height: 102px;
+    max-height: 130px;
+    aspect-ratio: auto;
   }
 
   .day-num {
-    font-size: 0.9rem;
-  }
-
-  .day-summary-line {
-    font-size: 0.7rem;
-    line-height: 1.35;
+    font-size: 0.95rem;
+    font-weight: 600;
   }
 
   .day-summary-wrap {
-    min-height: 2em;
-    padding: 2px 1px;
+    min-height: 2.5em;
+    padding: 3px 2px;
+    gap: 1px;
+  }
+
+  .day-summary-line {
+    font-size: 0.72rem;
+    line-height: 1.4;
+  }
+
+  .day-quick-actions {
+    gap: 3px;
+    margin-top: 4px;
   }
 
   .day-quick-btn {
-    padding: 1px 3px;
-    font-size: 0.55rem;
+    padding: 3px 5px;
+    font-size: 0.58rem;
   }
 
   .footer-actions {
@@ -993,5 +1009,21 @@ body {
   .footer-actions .btn-danger {
     width: 100%;
     max-width: 280px;
+  }
+}
+
+/* 極小画面ではセルをさらに確保 */
+@media (max-width: 400px) {
+  .day-cell {
+    min-height: 108px;
+  }
+
+  .day-summary-line {
+    font-size: 0.7rem;
+  }
+
+  .day-quick-btn {
+    font-size: 0.55rem;
+    padding: 2px 4px;
   }
 }

@@ -63,7 +63,6 @@
 
         <div id="timeSlotsSection" class="time-slots-section">
           <p class="time-slots-label">時間指定</p>
-          <p class="time-input-hint">時刻を直接入力（1分単位）するか、右の時計アイコンから選択（5分刻み）</p>
           <div class="slot">
             <span class="slot-num">1つ目</span>
             <div class="time-range-row">
@@ -93,11 +92,8 @@
             </div>
           </div>
           <div id="timePickerPopover" class="time-picker-popover" aria-hidden="true">
-            <div class="time-picker-inner">
-              <label>時<select id="timePickerHour"></select></label>
-              <label>分<select id="timePickerMin"></select></label>
-              <button type="button" class="time-picker-apply" id="timePickerApply">反映</button>
-            </div>
+            <p class="time-picker-title">時刻を選択（5分刻み）</p>
+            <div id="timePickerList" class="time-picker-list"></div>
           </div>
           <div class="time-chart-wrapper">
             <p class="time-chart-label">時間のイメージ</p>

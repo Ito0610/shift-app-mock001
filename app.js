@@ -349,6 +349,35 @@
     if (sel.value !== v) sel.value = v;
   }
 
+  // 全角→半角（数字とコロン）
+  function toHalfWidth(str) {
+    if (!str || typeof str !== 'string') return '';
+    return str.replace(/[０-９]/g, function (c) {
+      return String.fromCharCode(c.charCodeAt(0) - 0xFEE0);
+    }).replace(/\uFF1A/g, ':');
+  }
+
+  // 直接入力: 全角を半角にし、コロンを自動補完（2桁目で「:」を挿入）
+  function formatTimeInput(el) {
+    if (!el) return;
+    var raw = toHalfWidth(el.value);
+    var digits = raw.replace(/\D/g, '');
+    var colonIndex = raw.indexOf(':');
+    if (colonIndex === -1) {
+      if (digits.length <= 2) {
+        el.value = digits;
+      } else {
+        el.value = digits.slice(0, 2) + ':' + digits.slice(2, 4);
+      }
+    } else {
+      var before = raw.slice(0, colonIndex).replace(/\D/g, '');
+      var after = raw.slice(colonIndex + 1).replace(/\D/g, '');
+      if (before.length > 2) before = before.slice(0, 2);
+      if (after.length > 2) after = after.slice(0, 2);
+      el.value = before + (after.length > 0 ? ':' + after : '');
+    }
+  }
+
   // 直接入力 "10:23" や "9:5" をパース（7〜23時、0〜59分、1分単位可）。無効なら null
   function parseDirectTime(str) {
     if (!str || typeof str !== 'string') return null;
@@ -383,24 +412,55 @@
     inputEl.value = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
   }
 
-  // 時計アイコン用ポップオーバー
+  // 時刻リスト（7:00〜23:55、5分刻み）時間と分を一緒に選択
+  function buildTimePickerOptions() {
+    const list = [];
+    for (let min = TIME_RANGE_START; min <= TIME_RANGE_END; min += 5) {
+      const h = Math.floor(min / 60);
+      const m = min % 60;
+      list.push({ value: min, label: String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') });
+    }
+    return list;
+  }
+
+  const timePickerOptionsList = buildTimePickerOptions();
+
   let timePickerCurrentPrefix = null;
 
   function openTimePicker(prefix, anchorEl) {
     timePickerCurrentPrefix = prefix;
+    const listEl = document.getElementById('timePickerList');
+    if (!listEl) return;
+    listEl.innerHTML = '';
     const inputEl = document.getElementById(prefix + 'Input');
-    const val = inputEl && inputEl.value.trim();
-    if (val && parseDirectTime(val) != null) {
-      const min = parseDirectTime(val);
-      setSelectValue('timePickerHour', Math.floor(min / 60));
-      setSelectValue('timePickerMin', Math.floor((min % 60) / 5) * 5);
-    } else {
-      setSelectValue('timePickerHour', '');
-      setSelectValue('timePickerMin', '0');
-    }
+    const currentVal = inputEl && inputEl.value.trim();
+    const clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.className = 'time-picker-option time-picker-clear';
+    clearBtn.textContent = '指定なし';
+    clearBtn.addEventListener('click', function () {
+      if (inputEl) inputEl.value = '';
+      updateTimeChart();
+      closeTimePicker();
+    });
+    listEl.appendChild(clearBtn);
+    timePickerOptionsList.forEach(function (opt) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'time-picker-option';
+      btn.textContent = opt.label;
+      btn.dataset.minutes = opt.value;
+      if (currentVal === opt.label) btn.classList.add('time-picker-option-selected');
+      btn.addEventListener('click', function () {
+        if (inputEl) inputEl.value = opt.label;
+        updateTimeChart();
+        closeTimePicker();
+      });
+      listEl.appendChild(btn);
+    });
     const popover = document.getElementById('timePickerPopover');
     const rect = anchorEl.getBoundingClientRect();
-    popover.style.left = rect.left + 'px';
+    popover.style.left = Math.max(8, rect.left) + 'px';
     popover.style.top = (rect.bottom + 4) + 'px';
     popover.classList.add('time-picker-popover-visible');
     popover.setAttribute('aria-hidden', 'false');
@@ -411,22 +471,6 @@
     const popover = document.getElementById('timePickerPopover');
     popover.classList.remove('time-picker-popover-visible');
     popover.setAttribute('aria-hidden', 'true');
-  }
-
-  function applyTimePicker() {
-    if (!timePickerCurrentPrefix) return;
-    const hourVal = document.getElementById('timePickerHour').value;
-    if (hourVal === '' || hourVal == null) {
-      const inputEl = document.getElementById(timePickerCurrentPrefix + 'Input');
-      if (inputEl) inputEl.value = '';
-    } else {
-      const h = parseInt(hourVal, 10);
-      const m = parseInt(document.getElementById('timePickerMin').value || '0', 10);
-      const inputEl = document.getElementById(timePickerCurrentPrefix + 'Input');
-      if (inputEl) inputEl.value = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
-    }
-    updateTimeChart();
-    closeTimePicker();
   }
 
   function updateTimeChart() {
@@ -753,7 +797,12 @@
 
     ['slot1StartInput', 'slot1EndInput', 'slot2StartInput', 'slot2EndInput'].forEach(function (id) {
       const el = document.getElementById(id);
-      if (el) el.addEventListener('input', updateTimeChart);
+      if (el) {
+        el.addEventListener('input', function () {
+          formatTimeInput(el);
+          updateTimeChart();
+        });
+      }
     });
     [
       { id: 'slot1StartClock', prefix: 'slot1Start' },
@@ -768,7 +817,6 @@
         openTimePicker(item.prefix, btn);
       });
     });
-    document.getElementById('timePickerApply').addEventListener('click', applyTimePicker);
     document.addEventListener('click', function (e) {
       const popover = document.getElementById('timePickerPopover');
       if (!popover.classList.contains('time-picker-popover-visible')) return;
@@ -847,8 +895,6 @@
   function init() {
     loadState();
     document.getElementById('monthNotes').value = state.monthNotes;
-    fillTimeSelect('timePickerHour', hourOptions);
-    fillTimeSelect('timePickerMin', minOptions);
     renderCalendar();
     updateFooterVisibility();
     bindEvents();
