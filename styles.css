@@ -303,8 +303,16 @@ body {
 @media (max-width: 640px) {
   .copy-popover {
     max-width: calc(100vw - 24px);
+    min-width: 280px;
     max-height: calc(100vh - 24px);
     overflow-y: auto;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  .copy-popover-btn {
+    white-space: normal;
+    text-align: center;
+    padding: 0.75rem 1rem;
   }
 }
 

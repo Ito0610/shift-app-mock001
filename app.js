@@ -776,23 +776,36 @@
     const popover = document.getElementById('copyPopover');
     popover.setAttribute('data-copy-key', key);
     const rect = anchorEl.getBoundingClientRect();
-    popover.style.left = rect.left + 'px';
-    popover.style.top = (rect.bottom + 4) + 'px';
+    const isMobile = window.innerWidth <= 640;
+
+    if (isMobile) {
+      popover.style.left = '50%';
+      popover.style.top = '50%';
+      popover.style.transform = 'translate(-50%, -50%)';
+    } else {
+      popover.style.left = rect.left + 'px';
+      popover.style.top = (rect.bottom + 4) + 'px';
+      popover.style.transform = '';
+    }
+
     popover.classList.add('copy-popover-visible');
     popover.setAttribute('aria-hidden', 'false');
-    requestAnimationFrame(function () {
-      const popoverRect = popover.getBoundingClientRect();
-      const viewportH = window.innerHeight;
-      const spaceBelow = viewportH - rect.bottom;
-      const margin = 12;
-      let top = rect.bottom + 4;
-      if (spaceBelow < popoverRect.height + margin) {
-        top = rect.top - popoverRect.height - 4;
-      }
-      const left = Math.max(margin, Math.min(rect.left, window.innerWidth - popoverRect.width - margin));
-      popover.style.left = left + 'px';
-      popover.style.top = Math.max(margin, Math.min(top, viewportH - popoverRect.height - margin)) + 'px';
-    });
+
+    if (!isMobile) {
+      requestAnimationFrame(function () {
+        const popoverRect = popover.getBoundingClientRect();
+        const viewportH = window.innerHeight;
+        const spaceBelow = viewportH - rect.bottom;
+        const margin = 12;
+        let top = rect.bottom + 4;
+        if (spaceBelow < popoverRect.height + margin) {
+          top = rect.top - popoverRect.height - 4;
+        }
+        const left = Math.max(margin, Math.min(rect.left, window.innerWidth - popoverRect.width - margin));
+        popover.style.left = left + 'px';
+        popover.style.top = Math.max(margin, Math.min(top, viewportH - popoverRect.height - margin)) + 'px';
+      });
+    }
   }
 
   function closeCopyPopover() {
