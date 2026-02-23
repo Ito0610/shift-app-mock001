@@ -1,0 +1,921 @@
+/* ===== 変数・ベース ===== */
+:root {
+  --bg: #f5f5f0;
+  --surface: #fff;
+  --text: #1a1a1a;
+  --text-muted: #666;
+  --primary: #2c6b6b;
+  --primary-hover: #1e4d4d;
+  --accent: #e8a838;
+  --border: #ddd;
+  --calendar-today: #e8f4f4;
+  --calendar-has-entry: #d4edda;
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --radius: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ===== レイアウト ===== */
+.app {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 2rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== ヘッダー ===== */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.month-nav button {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius);
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: var(--text);
+  transition: background 0.15s;
+}
+
+.month-nav button:hover {
+  background: #eee;
+}
+
+#currentMonthLabel {
+  min-width: 120px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* ===== 月間共有事項 ===== */
+.month-notes {
+  margin-bottom: 1.5rem;
+}
+
+.month-notes label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.35rem;
+  color: var(--text-muted);
+}
+
+.month-notes textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+/* ===== カレンダー ===== */
+.calendar-wrapper {
+  flex: 1;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.weekdays .wd-sun {
+  color: #c53030;
+}
+
+.weekdays .wd-sat {
+  color: #1e5aa8;
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.day-cell {
+  aspect-ratio: 0.85;
+  max-height: 120px;
+  min-height: 88px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background: var(--surface);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.day-cell:hover {
+  background: #f8f8f8;
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+.day-cell.other-month {
+  color: #aaa;
+  background: #fafafa;
+}
+
+.day-cell.today {
+  background: var(--calendar-today);
+  border-color: var(--primary);
+  font-weight: 700;
+}
+
+.day-cell.has-entry {
+  background: var(--calendar-has-entry);
+  border-color: #a3d9a5;
+}
+
+.day-num {
+  font-size: 1rem;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.day-summary-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.4em;
+  width: 100%;
+  padding: 4px 2px;
+  gap: 2px;
+}
+
+.day-summary-line {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--text);
+  font-weight: 500;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.day-cell.has-entry .day-summary-line {
+  color: #0d5c0d;
+}
+
+.day-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-top: auto;
+  justify-content: center;
+}
+
+.day-quick-btn {
+  padding: 2px 5px;
+  font-size: 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.day-quick-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.day-quick-btn.day-quick-delete:hover {
+  background: #c53030;
+  border-color: #c53030;
+  color: #fff;
+}
+
+.day-quick-btn.day-quick-copy:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.day-cell.other-month .day-quick-actions {
+  display: none;
+}
+
+/* トップ画面のコピー用ポップオーバー */
+.copy-popover {
+  position: fixed;
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s, visibility 0.15s;
+}
+
+.copy-popover.copy-popover-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.copy-popover-btn {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  text-align: left;
+  white-space: nowrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text);
+  transition: background 0.15s;
+}
+
+.copy-popover-btn:hover {
+  background: #f0f0f0;
+}
+
+/* 土日・祝日の日付色 */
+.day-cell.saturday {
+  color: #1e5aa8;
+}
+.day-cell.saturday.other-month {
+  color: #6b9ed4;
+}
+.day-cell.sunday,
+.day-cell.holiday {
+  color: #c53030;
+}
+.day-cell.sunday.other-month,
+.day-cell.holiday.other-month {
+  color: #e07b7b;
+}
+
+/* ===== フッター・提出 ===== */
+.footer {
+  text-align: center;
+}
+
+.footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.btn-secondary {
+  padding: 0.6rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--primary);
+  background: var(--surface);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-secondary:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+.btn-danger {
+  padding: 0.6rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #fff;
+  background: #c53030;
+  border: 1px solid #c53030;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-danger:hover {
+  background: #9b2525;
+  border-color: #9b2525;
+  color: #fff;
+}
+
+.btn-danger-outline {
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #c53030;
+  background: transparent;
+  border: 1px solid #c53030;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-danger-outline:hover {
+  background: #c53030;
+  color: #fff;
+}
+
+.submit-btn {
+  padding: 0.85rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.submit-btn:hover {
+  background: var(--primary-hover);
+}
+
+.submit-btn-disabled,
+.submit-btn:disabled {
+  background: #999;
+  cursor: not-allowed;
+}
+
+.submit-btn:disabled:hover {
+  background: #999;
+}
+
+.submitted-badge {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ===== トースト ===== */
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(1rem);
+  padding: 0.75rem 1.25rem;
+  background: var(--text);
+  color: #fff;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  z-index: 200;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.toast.toast-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ===== モーダル内コピー ===== */
+.copy-actions {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border);
+}
+
+.copy-actions-label {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.copy-actions .btn-secondary {
+  display: block;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.copy-actions .btn-secondary:last-child {
+  margin-bottom: 0;
+}
+
+/* ===== 提出内容確認モーダル ===== */
+.modal-content-wide {
+  max-width: 560px;
+}
+
+.confirm-month-notes-label,
+.confirm-days-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+}
+
+.confirm-month-notes {
+  padding: 0.75rem;
+  background: #f5f5f5;
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  white-space: pre-wrap;
+}
+
+.confirm-days-list {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.confirm-day-line {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.confirm-day-line:last-child {
+  border-bottom: none;
+}
+
+.confirm-days-empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* ===== モーダル ===== */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+}
+
+.modal.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.modal-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-muted);
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.modal-close:hover {
+  background: #eee;
+  color: var(--text);
+}
+
+.modal-body {
+  padding: 1.25rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.modal-footer.modal-footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.modal-footer.modal-footer-actions .save-day-btn {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ===== モーダル内フォーム ===== */
+.field {
+  margin-bottom: 1.25rem;
+}
+
+.field:last-child {
+  margin-bottom: 0;
+}
+
+.field label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.35rem;
+  color: var(--text);
+}
+
+.field textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 1.2em;
+  height: 1.2em;
+  accent-color: var(--primary);
+}
+
+/* ===== 時間スロット ===== */
+.time-slots-section {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.time-slots-label {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.time-input-hint {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* 時間指定：入力欄＋時計アイコン（参考画像スタイル） */
+.time-range-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.time-input-wrap {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.time-input {
+  width: 5rem;
+  padding: 0.5rem 0.6rem;
+  border: none;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.time-input::placeholder {
+  color: #999;
+}
+
+.time-picker-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-left: 1px solid var(--border);
+  background: #f5f5f5;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.time-picker-btn:hover {
+  background: #e8e8e8;
+}
+
+.time-kara {
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.time-picker-popover {
+  position: fixed;
+  z-index: 150;
+  padding: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s, visibility 0.15s;
+}
+
+.time-picker-popover.time-picker-popover-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.time-picker-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.time-picker-inner label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.time-picker-inner select {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  min-width: 3.5rem;
+}
+
+.time-picker-apply {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.time-picker-apply:hover {
+  background: var(--primary-hover);
+}
+
+.slot {
+  margin-bottom: 1rem;
+}
+
+.slot:last-of-type {
+  margin-bottom: 0;
+}
+
+.slot-num {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.time-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.time-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.time-group-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 0.35rem;
+  color: var(--text);
+}
+
+.time-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+
+.time-fields label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.time-fields select {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  min-width: 3.5rem;
+}
+
+.time-direct-label {
+  margin-left: 0.25rem;
+}
+
+.time-direct-label input[type="text"] {
+  width: 5rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.time-direct-label input[type="text"]::placeholder {
+  color: #999;
+}
+
+.time-inputs {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.time-inputs label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.time-inputs select {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  min-width: 5rem;
+}
+
+/* ===== 時間チャート ===== */
+.time-chart-wrapper {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border);
+}
+
+.time-chart-label {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.time-chart {
+  width: 100%;
+}
+
+/* 何も入力されていないときはグレー。時間指定後に chart-slot で色付け */
+.time-chart-bar {
+  position: relative;
+  height: 32px;
+  background: #d0d0d0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.chart-slot {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border-radius: 4px;
+  min-width: 4px;
+  transition: left 0.15s, width 0.15s;
+}
+
+#chartSlot1 {
+  background: var(--primary);
+  opacity: 0.9;
+}
+
+#chartSlot2 {
+  background: var(--accent);
+  opacity: 0.9;
+}
+
+.time-chart-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* ===== 保存ボタン ===== */
+.save-day-btn {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.save-day-btn:hover {
+  background: var(--primary-hover);
+}
