@@ -296,7 +296,7 @@
         const btnTime = document.createElement('button');
         btnTime.type = 'button';
         btnTime.className = 'day-quick-btn day-quick-time';
-        btnTime.textContent = '時間';
+        btnTime.textContent = '時間指定';
         quickActions.appendChild(btnAllDay);
         quickActions.appendChild(btnTime);
         if (hasEntry) {

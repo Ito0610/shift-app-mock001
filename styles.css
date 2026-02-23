@@ -1029,12 +1029,20 @@ body {
   .calendar-wrapper {
     padding: 0.5rem;
     overflow-x: auto;
+    overflow-y: visible;
     -webkit-overflow-scrolling: touch;
+    padding-bottom: 2rem;
   }
 
-  /* 横スクロールで時間を1行表示できるようグリッドに最小幅を指定 */
+  /* 曜日ヘッダーとカレンダーを同じ幅にして横スクロール時もずれないようにする */
+  .weekdays {
+    min-width: 700px;
+  }
+
+  /* 横スクロールで時間を1行表示できるようグリッドに最小幅を指定。下余白で最下段のボタンが隠れないようにする */
   .calendar {
     min-width: 700px;
+    margin-bottom: 0.5rem;
   }
 
   /* セルを大きくして日付・2行時間・4ボタンがすべて見えるように */
@@ -1068,6 +1076,7 @@ body {
   .day-quick-actions {
     gap: 3px;
     margin-top: 4px;
+    flex-shrink: 0;
   }
 
   .day-quick-btn {
