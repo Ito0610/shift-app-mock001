@@ -416,7 +416,7 @@
     }).replace(/\uFF1A/g, ':');
   }
 
-  // 直接入力: 全角を半角にし、コロンを自動補完（2桁目で「:」を挿入）
+  // 直接入力: 全角を半角にし、コロンを自動補完。700→7:00、800→8:00、1230→12:30 のように解釈
   function formatTimeInput(el) {
     if (!el) return;
     var raw = toHalfWidth(el.value);
@@ -425,6 +425,8 @@
     if (colonIndex === -1) {
       if (digits.length <= 2) {
         el.value = digits;
+      } else if (digits.length === 3) {
+        el.value = digits[0] + ':' + digits.slice(1, 3);
       } else {
         el.value = digits.slice(0, 2) + ':' + digits.slice(2, 4);
       }
