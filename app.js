@@ -2,6 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'shiftHopeApp';
+  const STORAGE_KEY_GAS_URL = 'shiftHopeAppGasUrl';
 
   // 時間指定の範囲: 7:00 ～ 23:00
   const TIME_RANGE_START = 7 * 60;   // 7:00 = 420分
@@ -55,10 +56,25 @@
     monthNotes: '',
     days: {},
     submitted: false,
+    employeeName: '',
   };
 
   function dayKey(y, m, d) {
     return `${y}-${m + 1}-${d}`;
+  }
+
+  function getGasUrl() {
+    try {
+      return localStorage.getItem(STORAGE_KEY_GAS_URL) || '';
+    } catch (_) { return ''; }
+  }
+
+  function setGasUrl(url) {
+    try {
+      const u = (url && typeof url === 'string') ? url.trim() : '';
+      if (u) localStorage.setItem(STORAGE_KEY_GAS_URL, u);
+      else localStorage.removeItem(STORAGE_KEY_GAS_URL);
+    } catch (_) {}
   }
 
   function loadState() {
@@ -71,6 +87,7 @@
         if (parsed.monthNotes !== undefined) state.monthNotes = parsed.monthNotes;
         if (parsed.days && typeof parsed.days === 'object') state.days = parsed.days;
         if (parsed.submitted !== undefined) state.submitted = parsed.submitted;
+        if (parsed.employeeName !== undefined) state.employeeName = parsed.employeeName || '';
       }
     } catch (_) {}
   }
@@ -83,6 +100,7 @@
         monthNotes: state.monthNotes,
         days: state.days,
         submitted: state.submitted,
+        employeeName: state.employeeName,
       }));
     } catch (_) {}
   }
@@ -100,6 +118,37 @@
       toast.classList.remove('toast-visible');
       setTimeout(function () { toast.remove(); }, 300);
     }, 2000);
+  }
+
+  function populateEmployeeSelect(names) {
+    const sel = document.getElementById('employeeSelect');
+    if (!sel) return;
+    const current = state.employeeName;
+    sel.innerHTML = '<option value="">— 選択してください —</option>';
+    (names || []).forEach(function (name) {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      if (name === current) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    if (!current || !names || names.indexOf(current) === -1) state.employeeName = '';
+  }
+
+  function fetchEmployees() {
+    const url = getGasUrl();
+    if (!url || url.indexOf('script.google.com') === -1) return Promise.resolve();
+    return fetch(url)
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        const list = (data && data.employees) ? data.employees : [];
+        populateEmployeeSelect(list);
+        return list;
+      })
+      .catch(function () {
+        populateEmployeeSelect([]);
+        return [];
+      });
   }
 
   function deepCopyEntry(entry) {
@@ -978,20 +1027,91 @@
 
     document.getElementById('submitBtn').addEventListener('click', function () {
       state.monthNotes = document.getElementById('monthNotes').value;
+      saveState();
+
+      var gasUrl = getGasUrl();
+      var employeeName = state.employeeName && state.employeeName.trim();
+
+      if (gasUrl && employeeName) {
+        var payload = {
+          employeeName: employeeName,
+          year: state.year,
+          month: state.month + 1,
+          monthNotes: state.monthNotes,
+          days: state.days,
+          submittedAt: new Date().toISOString(),
+        };
+        fetch(gasUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+          .then(function () {
+            state.submitted = true;
+            saveState();
+            updateFooterVisibility();
+            var count = Object.keys(state.days).filter(function (k) {
+              var d = state.days[k];
+              return d.allDay || slotHasContent(d.slot1) || slotHasContent(d.slot2);
+            }).length;
+            showToast('希望を提出しました。1日単位で修正できます。');
+            alert('希望を提出しました。\n\n入力した日数: ' + count + ' 日\n\nスプレッドシートに記録されました。');
+          })
+          .catch(function (err) {
+            showToast('送信に失敗しました');
+            alert('送信に失敗しました。\n\nGASのURLとスプレッドシートの設定を確認してください。\n\n' + String(err));
+          });
+        return;
+      }
+
+      if (!gasUrl || !employeeName) {
+        alert(
+          '提出するには次の設定が必要です。\n\n' +
+            '1. 「⚙️ 設定」からGASのウェブアプリURLを入力する\n' +
+            '2. 「あなたの名前」で自分を選択する\n\n' +
+            '設定後、もう一度「希望を提出する」を押してください。'
+        );
+        return;
+      }
+
       state.submitted = true;
       saveState();
       updateFooterVisibility();
-      const count = Object.keys(state.days).filter(function (k) {
-        const d = state.days[k];
-        return d.allDay || slotHasContent(d.slot1) || slotHasContent(d.slot2);
-      }).length;
-      showToast('希望を提出しました。1日単位で修正できます。');
-      alert(
-        '希望を提出しました。\n\n入力した日数: ' + count + ' 日\n\n' +
-          '※本モックではブラウザ内に保存しています。\n' +
-          '実装時はGoogleスプレッドシート等へ送信できます。'
-      );
+      showToast('希望を提出しました（ローカル保存のみ）');
     });
+
+    document.getElementById('employeeSelect').addEventListener('change', function () {
+      state.employeeName = this.value || '';
+      saveState();
+    });
+
+    document.getElementById('settingsBtn').addEventListener('click', function () {
+      document.getElementById('gasUrlInput').value = getGasUrl();
+      document.getElementById('settingsModal').classList.add('is-open');
+      document.getElementById('settingsModal').setAttribute('aria-hidden', 'false');
+    });
+    document.getElementById('settingsModalClose').addEventListener('click', closeSettingsModal);
+    document.getElementById('settingsModalBackdrop').addEventListener('click', closeSettingsModal);
+    document.getElementById('settingsSaveBtn').addEventListener('click', function () {
+      var url = document.getElementById('gasUrlInput').value.trim();
+      setGasUrl(url);
+      closeSettingsModal();
+      if (url) {
+        fetchEmployees().then(function (list) {
+          showToast(list.length > 0 ? '設定を保存しました。従業員リストを読み込みました。' : '設定を保存しました。従業員シートを確認してください。');
+        });
+      } else {
+        populateEmployeeSelect([]);
+        showToast('設定を保存しました');
+      }
+    });
+  }
+
+  function closeSettingsModal() {
+    var modal = document.getElementById('settingsModal');
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
   }
 
   function init() {
@@ -1000,6 +1120,7 @@
     renderCalendar();
     updateFooterVisibility();
     bindEvents();
+    if (getGasUrl()) fetchEmployees();
   }
 
   init();

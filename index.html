@@ -17,6 +17,17 @@
       </div>
     </header>
 
+    <section class="employee-section">
+      <label for="employeeSelect">あなたの名前</label>
+      <div class="employee-row">
+        <select id="employeeSelect" aria-label="従業員名を選択">
+          <option value="">— 選択してください —</option>
+        </select>
+        <button type="button" id="settingsBtn" class="btn-settings" title="GASのURLを設定">⚙️ 設定</button>
+      </div>
+      <p id="employeeHint" class="employee-hint">名前のリストはGoogleスプレッドシートで管理されています。設定でGASのURLを入力すると読み込まれます。</p>
+    </section>
+
     <section class="month-notes">
       <label for="monthNotes">今月の共有事項（1ヶ月全体）</label>
       <textarea id="monthNotes" rows="3" placeholder="今月を通しての共有事項があればご記入ください"></textarea>
@@ -136,6 +147,26 @@
       <div class="modal-footer modal-footer-actions">
         <button type="button" id="clearDayBtn" class="btn-danger-outline">この日の入力を削除</button>
         <button type="button" id="saveDayBtn" class="save-day-btn">この日を保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 設定モーダル（GAS URL） -->
+  <div id="settingsModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" id="settingsModalBackdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>設定</h2>
+        <button type="button" class="modal-close" id="settingsModalClose" aria-label="閉じる">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="settings-desc">Google Apps Script（GAS）のウェブアプリURLを入力すると、従業員リストの取得と提出データの送信ができます。</p>
+        <label for="gasUrlInput">GAS ウェブアプリのURL</label>
+        <input type="url" id="gasUrlInput" class="gas-url-input" placeholder="https://script.google.com/macros/s/.../exec" />
+        <p class="settings-note">URLはこの端末のブラウザにのみ保存され、サーバーには送信されません。</p>
+      </div>
+      <div class="modal-footer modal-footer-actions">
+        <button type="button" id="settingsSaveBtn" class="save-day-btn">保存</button>
       </div>
     </div>
   </div>
