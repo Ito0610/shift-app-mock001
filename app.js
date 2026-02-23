@@ -1116,11 +1116,6 @@
       saveState();
     });
 
-    document.getElementById('settingsBtn').addEventListener('click', function () {
-      document.getElementById('gasUrlInput').value = getGasUrl() || getEffectiveGasUrl();
-      document.getElementById('settingsModal').classList.add('is-open');
-      document.getElementById('settingsModal').setAttribute('aria-hidden', 'false');
-    });
     document.getElementById('settingsModalClose').addEventListener('click', closeSettingsModal);
     document.getElementById('settingsModalBackdrop').addEventListener('click', closeSettingsModal);
     document.getElementById('settingsSaveBtn').addEventListener('click', function () {
