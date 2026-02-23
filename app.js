@@ -2,7 +2,9 @@
   'use strict';
 
   const STORAGE_KEY = 'shiftHopeApp';
-  const STORAGE_KEY_GAS_URL = 'shiftHopeAppGasUrl';
+  const STORAGE_KEY_GAS_URL = 'https://script.google.com/macros/s/AKfycbwS34yq35ZilTVjquXs060wfXPegIcehXM4zn-acXYw-Zb8taDa1PFMvj6jPTdlaokJ/exec';
+  // 管理者が index.html で window.SHIFT_APP_GAS_URL を設定すると、従業員が個別に設定しなくても従業員リスト・提出が利用できます
+  const BUILTIN_GAS_URL = (typeof window !== 'undefined' && window.SHIFT_APP_GAS_URL) ? String(window.SHIFT_APP_GAS_URL).trim() : '';
 
   // 時間指定の範囲: 7:00 ～ 23:00
   const TIME_RANGE_START = 7 * 60;   // 7:00 = 420分
@@ -67,6 +69,12 @@
     try {
       return localStorage.getItem(STORAGE_KEY_GAS_URL) || '';
     } catch (_) { return ''; }
+  }
+
+  function getEffectiveGasUrl() {
+    var fromStorage = getGasUrl();
+    if (fromStorage) return fromStorage;
+    return BUILTIN_GAS_URL || '';
   }
 
   function setGasUrl(url) {
@@ -136,7 +144,7 @@
   }
 
   function fetchEmployees() {
-    const url = getGasUrl();
+    const url = getEffectiveGasUrl();
     if (!url || url.indexOf('script.google.com') === -1) return Promise.resolve();
     return fetch(url)
       .then(function (res) { return res.json(); })
@@ -767,49 +775,67 @@
     const viewBtn = document.getElementById('viewSubmittedBtn');
     const badge = document.getElementById('submittedBadge');
     const submitBtn = document.getElementById('submitBtn');
-    if (state.submitted) {
-      if (viewBtn) viewBtn.style.display = 'inline-block';
-      if (badge) badge.style.display = 'block';
-      if (submitBtn) {
-        submitBtn.textContent = '提出済み';
-        submitBtn.disabled = true;
-        submitBtn.classList.add('submit-btn-disabled');
-      }
-    } else {
-      if (viewBtn) viewBtn.style.display = 'none';
-      if (badge) badge.style.display = 'none';
-      if (submitBtn) {
-        submitBtn.textContent = '希望を提出する';
-        submitBtn.disabled = false;
-        submitBtn.classList.remove('submit-btn-disabled');
-      }
+    if (viewBtn) viewBtn.style.display = 'inline-block';
+    if (submitBtn) {
+      submitBtn.textContent = state.submitted ? '希望を更新して提出する' : '希望を提出する';
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('submit-btn-disabled');
     }
+    if (state.submitted && badge) badge.style.display = 'block';
+    else if (badge) badge.style.display = 'none';
+  }
+
+  function fetchSubmissionAndReflectToCalendar(cb) {
+    var url = getEffectiveGasUrl();
+    var employeeName = state.employeeName && state.employeeName.trim();
+    if (!url || !employeeName) {
+      if (cb) cb();
+      return;
+    }
+    var params = 'employeeName=' + encodeURIComponent(employeeName) + '&year=' + state.year + '&month=' + (state.month + 1);
+    fetch(url + (url.indexOf('?') >= 0 ? '&' : '?') + params)
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data && typeof data.days === 'object') {
+          state.monthNotes = (data.monthNotes != null) ? String(data.monthNotes) : state.monthNotes;
+          state.days = data.days;
+          saveState();
+          renderCalendar();
+          showToast('提出内容をカレンダーに反映しました');
+        }
+        if (cb) cb();
+      })
+      .catch(function () { if (cb) cb(); });
   }
 
   function openConfirmModal() {
-    document.getElementById('confirmMonthNotes').textContent = state.monthNotes || '（なし）';
-    const listEl = document.getElementById('confirmDaysList');
-    listEl.innerHTML = '';
-    const keys = Object.keys(state.days).filter(function (k) {
-      const d = state.days[k];
-      return d && (d.allDay || slotHasContent(d.slot1) || slotHasContent(d.slot2) || (d.notes && d.notes.trim()));
-    }).sort();
-    if (keys.length === 0) {
-      listEl.innerHTML = '<p class="confirm-days-empty">入力された日付はありません。</p>';
-    } else {
-      keys.forEach(function (key) {
-        const [y, m, d] = key.split('-').map(Number);
-        const entry = state.days[key];
-        const line = document.createElement('div');
-        line.className = 'confirm-day-line';
-        const summary = formatDaySummary(entry) || '（備考のみ）';
-        const notes = entry.notes ? '　備考: ' + entry.notes : '';
-        line.textContent = m + '/' + d + ' … ' + summary + notes;
-        listEl.appendChild(line);
-      });
-    }
-    document.getElementById('confirmModal').classList.add('is-open');
-    document.getElementById('confirmModal').setAttribute('aria-hidden', 'false');
+    fetchSubmissionAndReflectToCalendar(function () {
+      document.getElementById('confirmMonthNotes').textContent = state.monthNotes || '（なし）';
+      const listEl = document.getElementById('confirmDaysList');
+      listEl.innerHTML = '';
+      const keys = Object.keys(state.days).filter(function (k) {
+        const d = state.days[k];
+        return d && (d.allDay || slotHasContent(d.slot1) || slotHasContent(d.slot2) || (d.notes && d.notes.trim()));
+      }).sort();
+      if (keys.length === 0) {
+        listEl.innerHTML = '<p class="confirm-days-empty">入力された日付はありません。</p>';
+      } else {
+        keys.forEach(function (key) {
+          const keyParts = key.split('-').map(Number);
+          const m = keyParts[1];
+          const d = keyParts[2];
+          const entry = state.days[key];
+          const line = document.createElement('div');
+          line.className = 'confirm-day-line';
+          const summary = formatDaySummary(entry) || '（備考のみ）';
+          const notes = entry.notes ? '　備考: ' + entry.notes : '';
+          line.textContent = m + '/' + d + ' … ' + summary + notes;
+          listEl.appendChild(line);
+        });
+      }
+      document.getElementById('confirmModal').classList.add('is-open');
+      document.getElementById('confirmModal').setAttribute('aria-hidden', 'false');
+    });
   }
 
   function closeConfirmModal() {
@@ -1029,7 +1055,7 @@
       state.monthNotes = document.getElementById('monthNotes').value;
       saveState();
 
-      var gasUrl = getGasUrl();
+      var gasUrl = getEffectiveGasUrl();
       var employeeName = state.employeeName && state.employeeName.trim();
 
       if (gasUrl && employeeName) {
@@ -1041,10 +1067,11 @@
           days: state.days,
           submittedAt: new Date().toISOString(),
         };
+        // Content-Type: text/plain にするとプリフライトが不要になり、GAS に POST が届きやすくなります（レスポンスはCORSのため読まない）
         fetch(gasUrl, {
           method: 'POST',
           mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
           body: JSON.stringify(payload),
         })
           .then(function () {
@@ -1067,9 +1094,10 @@
 
       if (!gasUrl || !employeeName) {
         alert(
-          '提出するには次の設定が必要です。\n\n' +
-            '1. 「⚙️ 設定」からGASのウェブアプリURLを入力する\n' +
-            '2. 「あなたの名前」で自分を選択する\n\n' +
+          '提出するには次のいずれかが必要です。\n\n' +
+            '1. 管理者が配布しているURLでアプリを開く（GASのURLが最初から設定されている場合）\n' +
+            '2. 「⚙️ 設定」からGASのウェブアプリURLを入力する\n' +
+            '3. 「あなたの名前」で自分を選択する\n\n' +
             '設定後、もう一度「希望を提出する」を押してください。'
         );
         return;
@@ -1087,7 +1115,7 @@
     });
 
     document.getElementById('settingsBtn').addEventListener('click', function () {
-      document.getElementById('gasUrlInput').value = getGasUrl();
+      document.getElementById('gasUrlInput').value = getGasUrl() || getEffectiveGasUrl();
       document.getElementById('settingsModal').classList.add('is-open');
       document.getElementById('settingsModal').setAttribute('aria-hidden', 'false');
     });
@@ -1120,7 +1148,7 @@
     renderCalendar();
     updateFooterVisibility();
     bindEvents();
-    if (getGasUrl()) fetchEmployees();
+    if (getEffectiveGasUrl()) fetchEmployees();
   }
 
   init();
