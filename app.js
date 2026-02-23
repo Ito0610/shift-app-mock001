@@ -2,9 +2,11 @@
   'use strict';
 
   const STORAGE_KEY = 'shiftHopeApp';
-  const STORAGE_KEY_GAS_URL = 'https://script.google.com/macros/s/AKfycbwS34yq35ZilTVjquXs060wfXPegIcehXM4zn-acXYw-Zb8taDa1PFMvj6jPTdlaokJ/exec';
-  // 管理者が index.html で window.SHIFT_APP_GAS_URL を設定すると、従業員が個別に設定しなくても従業員リスト・提出が利用できます
-  const BUILTIN_GAS_URL = (typeof window !== 'undefined' && window.SHIFT_APP_GAS_URL) ? String(window.SHIFT_APP_GAS_URL).trim() : '';
+  const STORAGE_KEY_GAS_URL = 'shiftHopeAppGasUrl'; // localStorage のキー名（ここにURLは入れない）
+
+  // 管理者用: ここにGASのURLを入れると従業員が設定しなくても従業員リスト・提出が利用できます（空のままなら index.html の window.SHIFT_APP_GAS_URL を使用）
+  const BUILTIN_GAS_URL_IN_APP = 'https://script.google.com/macros/s/AKfycbwS34yq35ZilTVjquXs060wfXPegIcehXM4zn-acXYw-Zb8taDa1PFMvj6jPTdlaokJ/exec';
+  const BUILTIN_GAS_URL = (typeof window !== 'undefined' && window.SHIFT_APP_GAS_URL) ? String(window.SHIFT_APP_GAS_URL).trim() : (BUILTIN_GAS_URL_IN_APP || '');
 
   // 時間指定の範囲: 7:00 ～ 23:00
   const TIME_RANGE_START = 7 * 60;   // 7:00 = 420分
