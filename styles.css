@@ -300,6 +300,14 @@ body {
   background: #f0f0f0;
 }
 
+@media (max-width: 640px) {
+  .copy-popover {
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+  }
+}
+
 /* 土日・祝日の日付色 */
 .day-cell.saturday {
   color: #1e5aa8;
