@@ -93,7 +93,20 @@
           </div>
           <div id="timePickerPopover" class="time-picker-popover" aria-hidden="true">
             <p class="time-picker-title">時刻を選択（5分刻み）</p>
-            <div id="timePickerList" class="time-picker-list"></div>
+            <div class="time-picker-wheels">
+              <div class="time-picker-wheel-wrap">
+                <span class="time-picker-wheel-label">時</span>
+                <div id="timePickerHourList" class="time-picker-wheel" tabindex="0"></div>
+              </div>
+              <div class="time-picker-wheel-wrap">
+                <span class="time-picker-wheel-label">分</span>
+                <div id="timePickerMinList" class="time-picker-wheel" tabindex="0"></div>
+              </div>
+            </div>
+            <div class="time-picker-wheel-actions">
+              <button type="button" id="timePickerClearBtn" class="time-picker-clear-btn">指定なし</button>
+              <button type="button" id="timePickerApplyBtn" class="time-picker-apply-btn">決定</button>
+            </div>
           </div>
           <div class="time-chart-wrapper">
             <p class="time-chart-label">時間のイメージ</p>

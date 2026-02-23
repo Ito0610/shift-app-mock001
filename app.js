@@ -412,58 +412,134 @@
     inputEl.value = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
   }
 
-  // 時刻リスト（7:00〜23:55、5分刻み）時間と分を一緒に選択
-  function buildTimePickerOptions() {
-    const list = [];
-    for (let min = TIME_RANGE_START; min <= TIME_RANGE_END; min += 5) {
-      const h = Math.floor(min / 60);
-      const m = min % 60;
-      list.push({ value: min, label: String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') });
-    }
-    return list;
-  }
-
-  const timePickerOptionsList = buildTimePickerOptions();
+  // 時刻ピッカー：時・分2軸ホイール用の定数
+  const TIME_PICKER_ITEM_HEIGHT = 40;
+  const TIME_PICKER_HOUR_VALUES = [''].concat([7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(String)); // 指定なし + 7〜23
+  const TIME_PICKER_MIN_VALUES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]; // 5分刻み
 
   let timePickerCurrentPrefix = null;
 
+  function buildWheelList(container, type, currentVal) {
+    container.innerHTML = '';
+    const pad = document.createElement('div');
+    pad.className = 'time-picker-wheel-pad';
+    container.appendChild(pad);
+
+    let currentIndex = 0;
+    const values = type === 'hour' ? TIME_PICKER_HOUR_VALUES : TIME_PICKER_MIN_VALUES;
+
+    if (type === 'hour') {
+      const total = parseDirectTime(currentVal);
+      if (total != null) {
+        const h = Math.floor(total / 60);
+        currentIndex = h >= 7 && h <= 23 ? h - 7 + 1 : 0; // 0=指定なし, 1=7, ...
+      }
+    } else {
+      const total = parseDirectTime(currentVal);
+      if (total != null) {
+        const m = total % 60;
+        const idx = TIME_PICKER_MIN_VALUES.indexOf(m);
+        currentIndex = idx >= 0 ? idx : 0;
+      }
+    }
+
+    values.forEach(function (val, i) {
+      const div = document.createElement('div');
+      div.className = 'time-picker-wheel-item';
+      div.dataset.index = i;
+      if (type === 'hour' && val === '') {
+        div.textContent = '指定なし';
+        div.classList.add('time-picker-wheel-item-clear');
+      } else if (type === 'hour') {
+        div.textContent = val + '時';
+      } else {
+        div.textContent = String(val).padStart(2, '0') + '分';
+      }
+      if (i === currentIndex) div.classList.add('time-picker-wheel-item-selected');
+      container.appendChild(div);
+    });
+
+    const padBottom = document.createElement('div');
+    padBottom.className = 'time-picker-wheel-pad';
+    container.appendChild(padBottom);
+
+    container.scrollTop = currentIndex * TIME_PICKER_ITEM_HEIGHT;
+    return currentIndex;
+  }
+
+  function getWheelIndex(container) {
+    const st = container.scrollTop;
+    const index = Math.round(st / TIME_PICKER_ITEM_HEIGHT);
+    const items = container.querySelectorAll('.time-picker-wheel-item');
+    const max = items.length > 0 ? items.length - 1 : 0;
+    return Math.max(0, Math.min(index, max));
+  }
+
+  function syncWheelSelection(container) {
+    const idx = getWheelIndex(container);
+    const items = container.querySelectorAll('.time-picker-wheel-item');
+    items.forEach(function (el, i) {
+      el.classList.toggle('time-picker-wheel-item-selected', i === idx);
+    });
+    return idx;
+  }
+
+  function applyTimeFromWheels() {
+    if (!timePickerCurrentPrefix) return;
+    const inputEl = document.getElementById(timePickerCurrentPrefix + 'Input');
+    const hourEl = document.getElementById('timePickerHourList');
+    const minEl = document.getElementById('timePickerMinList');
+    if (!inputEl || !hourEl || !minEl) return;
+    const hourIdx = getWheelIndex(hourEl);
+    const minIdx = getWheelIndex(minEl);
+    const hourVal = TIME_PICKER_HOUR_VALUES[hourIdx];
+    const minVal = TIME_PICKER_MIN_VALUES[minIdx];
+    if (hourVal === '') {
+      inputEl.value = '';
+    } else {
+      inputEl.value = String(hourVal).padStart(2, '0') + ':' + String(minVal).padStart(2, '0');
+    }
+    updateTimeChart();
+  }
+
   function openTimePicker(prefix, anchorEl) {
     timePickerCurrentPrefix = prefix;
-    const listEl = document.getElementById('timePickerList');
-    if (!listEl) return;
-    listEl.innerHTML = '';
     const inputEl = document.getElementById(prefix + 'Input');
     const currentVal = inputEl && inputEl.value.trim();
-    const clearBtn = document.createElement('button');
-    clearBtn.type = 'button';
-    clearBtn.className = 'time-picker-option time-picker-clear';
-    clearBtn.textContent = '指定なし';
-    clearBtn.addEventListener('click', function () {
+    const hourList = document.getElementById('timePickerHourList');
+    const minList = document.getElementById('timePickerMinList');
+    if (!hourList || !minList) return;
+
+    buildWheelList(hourList, 'hour', currentVal);
+    buildWheelList(minList, 'min', currentVal);
+
+    function onWheelScroll() {
+      syncWheelSelection(hourList);
+      syncWheelSelection(minList);
+      applyTimeFromWheels();
+    }
+
+    hourList.removeEventListener('scroll', hourList._timePickerScroll);
+    minList.removeEventListener('scroll', minList._timePickerScroll);
+    hourList._timePickerScroll = onWheelScroll;
+    minList._timePickerScroll = onWheelScroll;
+    hourList.addEventListener('scroll', onWheelScroll);
+    minList.addEventListener('scroll', onWheelScroll);
+
+    document.getElementById('timePickerClearBtn').onclick = function () {
       if (inputEl) inputEl.value = '';
       updateTimeChart();
       closeTimePicker();
-    });
-    listEl.appendChild(clearBtn);
-    timePickerOptionsList.forEach(function (opt) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'time-picker-option';
-      btn.textContent = opt.label;
-      btn.dataset.minutes = opt.value;
-      if (currentVal === opt.label) btn.classList.add('time-picker-option-selected');
-      btn.addEventListener('click', function () {
-        if (inputEl) inputEl.value = opt.label;
-        updateTimeChart();
-        closeTimePicker();
-      });
-      listEl.appendChild(btn);
-    });
+    };
+    document.getElementById('timePickerApplyBtn').onclick = closeTimePicker;
+
     const popover = document.getElementById('timePickerPopover');
     const rect = anchorEl.getBoundingClientRect();
     popover.style.left = Math.max(8, rect.left) + 'px';
     popover.style.top = (rect.bottom + 4) + 'px';
     popover.classList.add('time-picker-popover-visible');
     popover.setAttribute('aria-hidden', 'false');
+    applyTimeFromWheels();
   }
 
   function closeTimePicker() {

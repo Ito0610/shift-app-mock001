@@ -718,9 +718,9 @@ body {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
-  max-height: 70vh;
   display: flex;
   flex-direction: column;
+  min-width: 200px;
 }
 
 .time-picker-title {
@@ -730,44 +730,110 @@ body {
   color: var(--text-muted);
 }
 
-.time-picker-list {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  overflow-y: auto;
-  max-height: 50vh;
-  min-width: 200px;
+/* 時・分2軸ホイール */
+.time-picker-wheels {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
-.time-picker-option {
-  padding: 0.5rem 0.4rem;
-  font-size: 0.9rem;
+.time-picker-wheel-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.time-picker-wheel-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.time-picker-wheel {
+  height: 180px;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  cursor: pointer;
+  border-radius: var(--radius);
+  background: #fafafa;
+}
+
+/* 上下パッドで先頭・末尾も中央にスナップできるように（180/2 - 40/2 = 70） */
+.time-picker-wheel-pad {
+  scroll-snap-align: center;
+  height: 70px;
+  flex-shrink: 0;
+}
+
+.time-picker-wheel-item {
+  scroll-snap-align: center;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 500;
   color: var(--text);
+  flex-shrink: 0;
+  cursor: default;
+}
+
+.time-picker-wheel-item.time-picker-wheel-item-selected {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.time-picker-wheel-item.time-picker-wheel-item-clear {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.time-picker-wheel-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.time-picker-clear-btn {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.time-picker-clear-btn:hover {
+  background: #f5f5f5;
+  color: var(--text);
+}
+
+.time-picker-apply-btn {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
   transition: background 0.15s;
 }
 
-.time-picker-option:hover {
-  background: #f0f0f0;
-}
-
-.time-picker-option.time-picker-option-selected {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
-}
-
-.time-picker-clear {
-  grid-column: 1 / -1;
-  color: var(--text-muted);
-}
-
-.time-picker-clear:hover {
-  background: #f5f5f5;
-  color: var(--text);
+.time-picker-apply-btn:hover {
+  background: var(--primary-hover);
 }
 
 .slot {
@@ -962,6 +1028,13 @@ body {
 
   .calendar-wrapper {
     padding: 0.5rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 横スクロールで時間を1行表示できるようグリッドに最小幅を指定 */
+  .calendar {
+    min-width: 700px;
   }
 
   /* セルを大きくして日付・2行時間・4ボタンがすべて見えるように */
@@ -986,6 +1059,10 @@ body {
   .day-summary-line {
     font-size: 0.72rem;
     line-height: 1.4;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: unset;
+    max-width: none;
   }
 
   .day-quick-actions {
