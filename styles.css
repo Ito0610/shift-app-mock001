@@ -739,6 +739,12 @@ body {
   color: var(--text-muted);
 }
 
+.time-slots-desc {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
 /* 時間指定：入力欄＋時計アイコン */
 .time-range-row {
   display: flex;
