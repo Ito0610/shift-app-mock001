@@ -46,6 +46,7 @@
     <footer class="footer">
       <div class="footer-actions">
         <button type="button" id="draftSaveBtn" class="btn-secondary">下書き保存</button>
+        <button type="button" id="draftRestoreBtn" class="btn-secondary">下書き復元</button>
         <button type="button" id="viewSubmittedBtn" class="btn-secondary" style="display: none;">提出内容を確認</button>
         <button type="button" id="submitBtn" class="submit-btn">希望を提出する</button>
         <button type="button" id="clearAllBtn" class="btn-danger">入力内容を削除</button>
@@ -190,5 +191,6 @@
   <!-- 管理者: 次の1行のURLをGASのウェブアプリのURLに書き換えると、従業員が個別に設定しなくても従業員リスト・提出が利用できます -->
   <script>window.SHIFT_APP_GAS_URL = '';</script>
   <script src="app.js"></script>
+  <script src="draft-restore/draft-restore.js"></script>
 </body>
 </html>
