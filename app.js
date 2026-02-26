@@ -1066,6 +1066,28 @@
       state.monthNotes = document.getElementById('monthNotes').value;
       saveState();
       showToast('下書きを保存しました');
+      // GASのURLと名前が設定されていれば、スプレッドシートの「下書き」シートにも保存
+      var gasUrl = getEffectiveGasUrl();
+      var employeeName = state.employeeName && state.employeeName.trim();
+      if (gasUrl && employeeName && gasUrl.indexOf('script.google.com') !== -1) {
+        var payload = {
+          draft: true,
+          employeeName: employeeName,
+          year: state.year,
+          month: state.month + 1,
+          monthNotes: state.monthNotes,
+          days: state.days,
+          submittedAt: new Date().toISOString(),
+        };
+        fetch(gasUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+          body: JSON.stringify(payload),
+        }).catch(function () {
+          showToast('サーバーへの下書き保存に失敗しました');
+        });
+      }
     });
 
     document.getElementById('viewSubmittedBtn').addEventListener('click', openConfirmModal);
