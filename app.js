@@ -1065,8 +1065,6 @@
     document.getElementById('draftSaveBtn').addEventListener('click', function () {
       state.monthNotes = document.getElementById('monthNotes').value;
       saveState();
-      showToast('下書きを保存しました');
-      // GASのURLと名前が設定されていれば、スプレッドシートの「下書き」シートにも保存
       var gasUrl = getEffectiveGasUrl();
       var employeeName = state.employeeName && state.employeeName.trim();
       if (gasUrl && employeeName && gasUrl.indexOf('script.google.com') !== -1) {
@@ -1084,11 +1082,50 @@
           mode: 'no-cors',
           headers: { 'Content-Type': 'text/plain; charset=utf-8' },
           body: JSON.stringify(payload),
+        }).then(function () {
+          showToast('下書きをスプレッドシートに保存しました');
         }).catch(function () {
-          showToast('サーバーへの下書き保存に失敗しました');
+          showToast('下書きの保存に失敗しました');
         });
+      } else {
+        showToast('下書きを保存しました（GASのURLと名前を設定するとスプレッドシートにも保存されます）');
       }
     });
+
+    // 下書き復元: スプレッドシートの「下書き」シートから取得して画面に反映
+    var draftRestoreBtn = document.getElementById('draftRestoreBtn');
+    if (draftRestoreBtn) {
+      draftRestoreBtn.addEventListener('click', function () {
+        var gasUrl = getEffectiveGasUrl();
+        var employeeName = state.employeeName && state.employeeName.trim();
+        if (!gasUrl || !employeeName || gasUrl.indexOf('script.google.com') === -1) {
+          showToast('下書き復元にはGASのURLと名前の設定が必要です');
+          return;
+        }
+        if (!window.confirm('スプレッドシートの下書きを復元しますか？\n現在の入力内容は上書きされます。')) return;
+        var params = 'draft=1&employeeName=' + encodeURIComponent(employeeName) + '&year=' + state.year + '&month=' + (state.month + 1);
+        fetch(gasUrl + (gasUrl.indexOf('?') >= 0 ? '&' : '?') + params)
+          .then(function (res) { return res.json(); })
+          .then(function (data) {
+            if (data && typeof data.days === 'object') {
+              state.monthNotes = (data.monthNotes != null) ? String(data.monthNotes) : '';
+              state.days = data.days;
+              if (data.year != null) state.year = Number(data.year);
+              if (data.month != null) state.month = Number(data.month) - 1;
+              saveState();
+              document.getElementById('monthNotes').value = state.monthNotes;
+              renderCalendar();
+              updateFooterVisibility();
+              showToast('下書きを復元しました');
+            } else {
+              showToast('保存された下書きはありません');
+            }
+          })
+          .catch(function () {
+            showToast('下書きの取得に失敗しました');
+          });
+      });
+    }
 
     document.getElementById('viewSubmittedBtn').addEventListener('click', openConfirmModal);
     document.getElementById('confirmModalClose').addEventListener('click', closeConfirmModal);
