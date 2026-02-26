@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>シフト希望提出</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>シフト希望提出</h1>
+      <div class="month-nav">
+        <button type="button" id="prevMonth" aria-label="前月">‹</button>
+        <span id="currentMonthLabel">2025年3月</span>
+        <button type="button" id="nextMonth" aria-label="翌月">›</button>
+      </div>
+    </header>
+
+    <section class="employee-section">
+      <label for="employeeSelect">あなたの名前</label>
+      <div class="employee-row">
+        <select id="employeeSelect" aria-label="従業員名を選択">
+          <option value="">— 選択してください —</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="month-notes">
+      <label for="monthNotes">今月の共有事項（1ヶ月全体）</label>
+      <textarea id="monthNotes" rows="3" placeholder="今月を通しての共有事項があればご記入ください"></textarea>
+    </section>
+
+    <main class="calendar-wrapper">
+      <div class="weekdays">
+        <span class="wd-sun">日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span class="wd-sat">土</span>
+      </div>
+      <div id="calendar" class="calendar"></div>
+      <!-- トップ画面のコピー用ポップオーバー -->
+      <div id="copyPopover" class="copy-popover" aria-hidden="true">
+        <button type="button" id="copyPopoverToOthers" class="copy-popover-btn">この内容を他の日にコピー</button>
+        <button type="button" id="copyPopoverToWeekday" class="copy-popover-btn">他の<span id="copyPopoverWeekday">金</span>曜日に一括コピー</button>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-actions">
+        <button type="button" id="draftSaveBtn" class="btn-secondary">下書き保存</button>
+        <button type="button" id="viewSubmittedBtn" class="btn-secondary" style="display: none;">提出内容を確認</button>
+        <button type="button" id="submitBtn" class="submit-btn">希望を提出する</button>
+        <button type="button" id="clearAllBtn" class="btn-danger">入力内容を削除</button>
+      </div>
+      <p id="submittedBadge" class="submitted-badge" style="display: none;">提出済み（1日単位で修正可能）</p>
+    </footer>
+  </div>
+
+  <!-- 日付入力モーダル -->
+  <div id="dayModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" id="modalBackdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalDayTitle">3月15日 の希望</h2>
+        <button type="button" class="modal-close" id="modalClose" aria-label="閉じる">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label class="checkbox-label">
+            <input type="checkbox" id="allDay" />
+            <span>終日で出勤</span>
+          </label>
+        </div>
+
+        <div id="timeSlotsSection" class="time-slots-section">
+          <p class="time-slots-label">時間指定</p>
+          <p class="time-slots-desc">（間の「:」は自動入力されます。12時は「1200」と入力。）</p>
+          <div class="slot">
+            <span class="slot-num">1つ目</span>
+            <div class="time-range-row">
+              <div class="time-input-wrap">
+                <input type="text" id="slot1StartInput" class="time-input" placeholder="--:--" maxlength="5" autocomplete="off" inputmode="numeric" />
+                <button type="button" class="time-picker-btn" id="slot1StartClock" title="時刻を選択" aria-label="時刻を選択">🕐</button>
+              </div>
+              <span class="time-kara">から</span>
+              <div class="time-input-wrap">
+                <input type="text" id="slot1EndInput" class="time-input" placeholder="--:--" maxlength="5" autocomplete="off" inputmode="numeric" />
+                <button type="button" class="time-picker-btn" id="slot1EndClock" title="時刻を選択" aria-label="時刻を選択">🕐</button>
+              </div>
+            </div>
+          </div>
+          <div class="slot">
+            <span class="slot-num">2つ目（※時間指定を2つに分けたい場合に利用）</span>
+            <div class="time-range-row">
+              <div class="time-input-wrap">
+                <input type="text" id="slot2StartInput" class="time-input" placeholder="--:--" maxlength="5" autocomplete="off" inputmode="numeric" />
+                <button type="button" class="time-picker-btn" id="slot2StartClock" title="時刻を選択" aria-label="時刻を選択">🕐</button>
+              </div>
+              <span class="time-kara">から</span>
+              <div class="time-input-wrap">
+                <input type="text" id="slot2EndInput" class="time-input" placeholder="--:--" maxlength="5" autocomplete="off" inputmode="numeric" />
+                <button type="button" class="time-picker-btn" id="slot2EndClock" title="時刻を選択" aria-label="時刻を選択">🕐</button>
+              </div>
+            </div>
+          </div>
+          <div id="timePickerPopover" class="time-picker-popover" aria-hidden="true">
+            <p class="time-picker-title">時刻を選択（5分刻み）</p>
+            <div class="time-picker-wheels">
+              <div class="time-picker-wheel-wrap">
+                <span class="time-picker-wheel-label">時</span>
+                <div id="timePickerHourList" class="time-picker-wheel" tabindex="0"></div>
+              </div>
+              <div class="time-picker-wheel-wrap">
+                <span class="time-picker-wheel-label">分</span>
+                <div id="timePickerMinList" class="time-picker-wheel" tabindex="0"></div>
+              </div>
+            </div>
+            <div class="time-picker-wheel-actions">
+              <button type="button" id="timePickerClearBtn" class="time-picker-clear-btn">指定なし</button>
+              <button type="button" id="timePickerApplyBtn" class="time-picker-apply-btn">決定</button>
+            </div>
+          </div>
+          <div class="time-chart-wrapper">
+            <p class="time-chart-label">時間のイメージ</p>
+            <div class="time-chart">
+              <div class="time-chart-bar">
+                <div id="chartSlot1" class="chart-slot"></div>
+                <div id="chartSlot2" class="chart-slot"></div>
+              </div>
+              <div class="time-chart-labels">
+                <span>7</span><span>12</span><span>18</span><span>23時</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="dayNotes">この日の備考・共有事項</label>
+          <textarea id="dayNotes" rows="3" placeholder="この日についての共有事項があればご記入ください"></textarea>
+        </div>
+
+        <div class="copy-actions">
+          <p class="copy-actions-label">コピー</p>
+          <button type="button" id="copyDayToOthersBtn" class="btn-secondary">この内容を他の日にコピー</button>
+          <button type="button" id="copyWeekToOtherBtn" class="btn-secondary">他の<span id="copyWeekdayLabel">金</span>曜日に一括コピー</button>
+        </div>
+      </div>
+      <div class="modal-footer modal-footer-actions">
+        <button type="button" id="clearDayBtn" class="btn-danger-outline">この日の入力を削除</button>
+        <button type="button" id="saveDayBtn" class="save-day-btn">この日を保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 設定モーダル（GAS URL） -->
+  <div id="settingsModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" id="settingsModalBackdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>設定</h2>
+        <button type="button" class="modal-close" id="settingsModalClose" aria-label="閉じる">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="settings-desc">Google Apps Script（GAS）のウェブアプリURLを入力すると、従業員リストの取得と提出データの送信ができます。</p>
+        <label for="gasUrlInput">GAS ウェブアプリのURL</label>
+        <input type="url" id="gasUrlInput" class="gas-url-input" placeholder="https://script.google.com/macros/s/.../exec" />
+        <p class="settings-note">URLはこの端末のブラウザにのみ保存され、サーバーには送信されません。</p>
+      </div>
+      <div class="modal-footer modal-footer-actions">
+        <button type="button" id="settingsSaveBtn" class="save-day-btn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 提出内容確認モーダル -->
+  <div id="confirmModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" id="confirmModalBackdrop"></div>
+    <div class="modal-content modal-content-wide">
+      <div class="modal-header">
+        <h2>提出内容の確認</h2>
+        <button type="button" class="modal-close" id="confirmModalClose" aria-label="閉じる">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="confirm-month-notes-label">今月の共有事項</p>
+        <div id="confirmMonthNotes" class="confirm-month-notes"></div>
+        <p class="confirm-days-label">日付ごとの希望・備考</p>
+        <div id="confirmDaysList" class="confirm-days-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 管理者: 次の1行のURLをGASのウェブアプリのURLに書き換えると、従業員が個別に設定しなくても従業員リスト・提出が利用できます -->
+  <script>window.SHIFT_APP_GAS_URL = '';</script>
+  <script src="app.js"></script>
+</body>
+</html>
